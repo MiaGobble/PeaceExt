@@ -82,7 +82,52 @@ func process(in interface{}) {
 	if v.Kind() == reflect.Map {
 		for _, key := range v.MapKeys() {
 			strct := v.MapIndex(key)
-			fmt.Println(key.Interface(), strct.Interface())
+
+			index := key.Interface()
+			value := reflect.ValueOf(strct.Interface())
+
+			if index == "tree" {
+				for _, treeKey := range value.MapKeys() {
+					treeValue := key.MapIndex(treeKey)
+					//var binData interface{}
+
+					treeIndex := treeKey.Interface()
+
+					fmt.Println("KEY")
+					fmt.Println(treeIndex)
+
+					//fmt.Println(reflect.ValueOf(treeIndex))
+
+					if treeIndex != "$className" {
+						for k, v := range key.(map[string]string) {
+							//res[k] = v.(string)
+							fmt.Println(k)
+							fmt.Println(v)
+						}
+					}
+
+					// fmt.Println("STRCT")
+					// fmt.Println(treeValue)
+				}
+			}
+
+			// data := `{"1":"2", "3": "4"}`
+			// var v interface{}
+			// if err := json.Unmarshal([]byte(data), &v); err != nil {
+			// 	log.Fatal(err)
+			// }
+
+			// var res = map[string]string{}
+			// for k, v := range v.(map[string]interface{}) {
+			// 	res[k] = v.(string)
+			// }
+			// fmt.Println(reflect.TypeOf(res), res)
+
+			// fmt.Println("KEY")
+			// fmt.Println(key.Interface())
+			// fmt.Println("STRCT")
+			// fmt.Println(strct.Interface())
+
 		}
 	}
 }
@@ -223,35 +268,27 @@ func main() {
 
 			_, err := os.Stat(projectDirectory)
 
-			type defaultProject struct {
-				name string
-				tree map[string]map[string]string
-			}
-
 			if os.IsNotExist(err) {
-				file, err := os.Create(projectDirectory)
+				//file, err := os.Create(projectDirectory)
 
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+				//if err != nil {
+				//	fmt.Println(err)
+				//	return
+				//}
 
-				defer file.Close()
+				//defer file.Close()
 
-				fmt.Fprintf(file, jsonPackage)
+				//fmt.Fprintf(file, jsonPackage)
 
 				var v interface{}
-				//err = json.Unmarshal([]byte(jsonPackage), &payload)
 
 				if err := json.Unmarshal([]byte(jsonPackage), &v); err != nil {
 					log.Fatal(err)
 				}
 
-				if err != nil {
-					log.Fatal("Error during Unmarshal(): ", err)
-				}
+				//os.Mkdir(finalDirectory+"/src", os.ModePerm)
 
-				os.Mkdir(finalDirectory+"/src", os.ModePerm)
+				// Note, re-enable project saving soon
 
 				/*
 					tree map[
