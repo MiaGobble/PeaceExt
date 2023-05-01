@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 
@@ -65,6 +66,25 @@ func openFile(path string, editor string) error {
 	}
 
 	return nil
+}
+
+func process(in interface{}) {
+	v := reflect.ValueOf(in)
+
+	// if isSlice {
+	//     for i := 0; i < v.Len(); i++ {
+	//         strct := v.Index(i).Interface()
+	//         //... proccess struct
+	//     }
+	//     return
+	// }
+
+	if v.Kind() == reflect.Map {
+		for _, key := range v.MapKeys() {
+			strct := v.MapIndex(key)
+			fmt.Println(key.Interface(), strct.Interface())
+		}
+	}
 }
 
 func main() {
@@ -202,7 +222,12 @@ func main() {
 			log.Printf(projectDirectory)
 
 			_, err := os.Stat(projectDirectory)
-			
+
+			type defaultProject struct {
+				name string
+				tree map[string]map[string]string
+			}
+
 			if os.IsNotExist(err) {
 				file, err := os.Create(projectDirectory)
 
@@ -215,31 +240,30 @@ func main() {
 
 				fmt.Fprintf(file, jsonPackage)
 
-				var payload map[string]interface{}
-				err = json.Unmarshal([]byte(jsonPackage), &payload)
+				var v interface{}
+				//err = json.Unmarshal([]byte(jsonPackage), &payload)
+
+				if err := json.Unmarshal([]byte(jsonPackage), &v); err != nil {
+					log.Fatal(err)
+				}
 
 				if err != nil {
 					log.Fatal("Error during Unmarshal(): ", err)
 				}
 
-				os.Mkdir(finalDirectory + "/src", os.ModePerm)
+				os.Mkdir(finalDirectory+"/src", os.ModePerm)
 
-				// Note: This part of the code is so fucking bad
-				// Let's plan on not using spammed if-statements
+				/*
+					tree map[
+						$className:DataModel
+						ReplicatedFirst:map[$path:src/ReplicatedFirst]
+						ReplicatedStorage:map[$path:src/ReplicatedStorage]
+						ServerScriptService:map[$path:src/ServerScriptService]
+						ServerStorage:map[$path:src/ServerStorage]
+					]
+				*/
 
-				// test := map[string]interface{} {
-				// 	"omar":mixed,
-				//   }
-
-				for _, val := range payload {
-					var subVal map[interface{}]string
-
-					err = json.Unmarshal([]byte(val), &subVal)
-
-					if (val.Kind() == bool && reflectedValue["$path"] != nil) {
-						os.Mkdir(finalDirectory + "/" + reflectedValue["$path"], os.ModePerm)
-					}
-				}
+				process(v)
 			} else if err != nil {
 				log.Printf("Something went wrong when initializing package\n")
 				log.Printf("error: %s", err)
