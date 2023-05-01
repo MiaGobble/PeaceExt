@@ -224,9 +224,20 @@ func main() {
 
 				os.Mkdir(finalDirectory + "/src", os.ModePerm)
 
+				// Note: This part of the code is so fucking bad
+				// Let's plan on not using spammed if-statements
+
+				// test := map[string]interface{} {
+				// 	"omar":mixed,
+				//   }
+
 				for _, val := range payload {
-					if val["$path"] {
-						os.Mkdir(finalDirectory + "/" + val["$path"], os.ModePerm)
+					var subVal map[interface{}]string
+
+					err = json.Unmarshal([]byte(val), &subVal)
+
+					if (val.Kind() == bool && reflectedValue["$path"] != nil) {
+						os.Mkdir(finalDirectory + "/" + reflectedValue["$path"], os.ModePerm)
 					}
 				}
 			} else if err != nil {
