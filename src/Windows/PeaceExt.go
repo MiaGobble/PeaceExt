@@ -68,16 +68,34 @@ func openFile(path string, editor string) error {
 	return nil
 }
 
+func closeFile(path string, editor string) error {
+	cmd := exec.Command(editor, path)
+	err := cmd.Process.Release()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createTemporaryLuaScript(scriptPath string, uuid string, editorPath string, response http.ResponseWriter, ctx *context) {
+	scr := script{
+		FsPath:     scriptPath,
+		Identifier: uuid,
+	}
+
+	ctx.Scripts[uuid] = scr
+	ctx.ScriptWatcher.Add(scriptPath)
+
+	openFile(scriptPath, editorPath)
+
+	log.Printf("Opened UUID %s at FS path %s\n", uuid, scriptPath)
+	fmt.Fprintf(response, "success: new")
+}
+
 func process(in interface{}) {
 	v := reflect.ValueOf(in)
-
-	// if isSlice {
-	//     for i := 0; i < v.Len(); i++ {
-	//         strct := v.Index(i).Interface()
-	//         //... proccess struct
-	//     }
-	//     return
-	// }
 
 	if v.Kind() == reflect.Map {
 		for _, key := range v.MapKeys() {
@@ -88,21 +106,26 @@ func process(in interface{}) {
 
 			if index == "tree" {
 				for _, treeKey := range value.MapKeys() {
-					treeValue := key.MapIndex(treeKey)
-					//var binData interface{}
-
 					treeIndex := treeKey.Interface()
 
 					fmt.Println("KEY")
 					fmt.Println(treeIndex)
 
-					//fmt.Println(reflect.ValueOf(treeIndex))
-
 					if treeIndex != "$className" {
-						for k, v := range key.(map[string]string) {
+						fmt.Println("bug")
+						fmt.Println(treeKey)
+
+						a := key.MapIndex(value) // panic serving ...: reflect: call of reflect.Value.MapIndex on string Value
+						b := reflect.ValueOf(a.Interface())
+
+						for _, key2 := range b.MapKeys() {
 							//res[k] = v.(string)
-							fmt.Println(k)
-							fmt.Println(v)
+							//strct2 := treeKey.MapIndex(key2)
+							index2 := key2.Interface()
+							value2 := reflect.ValueOf(key2.Interface())
+
+							fmt.Println(index2)
+							fmt.Println(value2)
 						}
 					}
 
@@ -110,24 +133,6 @@ func process(in interface{}) {
 					// fmt.Println(treeValue)
 				}
 			}
-
-			// data := `{"1":"2", "3": "4"}`
-			// var v interface{}
-			// if err := json.Unmarshal([]byte(data), &v); err != nil {
-			// 	log.Fatal(err)
-			// }
-
-			// var res = map[string]string{}
-			// for k, v := range v.(map[string]interface{}) {
-			// 	res[k] = v.(string)
-			// }
-			// fmt.Println(reflect.TypeOf(res), res)
-
-			// fmt.Println("KEY")
-			// fmt.Println(key.Interface())
-			// fmt.Println("STRCT")
-			// fmt.Println(strct.Interface())
-
 		}
 	}
 }
@@ -191,20 +196,31 @@ func main() {
 				if err != nil {
 					fmt.Fprintf(response, "failure: error writing: %s\n", err)
 					log.Fatalf("Error writing to file: %s\n", err)
+					//createTemporaryLuaScript(scriptPath, uuid, editorPath, response, ctx)
 				} else {
-					scr := script{
-						FsPath:     scriptPath,
-						Identifier: uuid,
-					}
-
-					ctx.Scripts[uuid] = scr
-					ctx.ScriptWatcher.Add(scriptPath)
-
-					openFile(scriptPath, editorPath)
-
-					log.Printf("Opened UUID %s at FS path %s\n", uuid, scriptPath)
-					fmt.Fprintf(response, "success: new")
+					createTemporaryLuaScript(scriptPath, uuid, editorPath, response, ctx)
 				}
+			}
+		})
+
+		http.HandleFunc("/closeExisting", func(response http.ResponseWriter, request *http.Request) {
+			uuid := request.PostFormValue("uuid")
+
+			if scr, ok := ctx.Scripts[uuid]; ok {
+				scriptPath := path.Join(ctx.DirPath, uuid+".lua")
+				f, _ := os.Open(scriptPath)
+				f.Close()
+
+				err := os.Remove(scriptPath)
+
+				if err != nil {
+					fmt.Fprintf(response, "error: cant delete %s as the closefile function returned %s\n", scr, err)
+				} else {
+					delete(ctx.Scripts, uuid)
+					fmt.Fprintf(response, "success: deleted %s\n", uuid)
+				}
+			} else {
+				fmt.Fprintf(response, "error: cant delete %s\n", scr)
 			}
 		})
 
@@ -251,63 +267,64 @@ func main() {
 			}
 		})
 
-		http.HandleFunc("/initPackage", func(response http.ResponseWriter, request *http.Request) {
-			log.Printf("Initializing Peace project!\n")
+		// TODO: Initialize projects with default_project.json file to be compatible with Rojo & Wally
+		// http.HandleFunc("/initPackage", func(response http.ResponseWriter, request *http.Request) {
+		// 	log.Printf("Initializing Peace project!\n")
 
-			homeDirectory, _ := os.UserHomeDir()
-			folderDirectory := request.PostFormValue("folder")
-			jsonPackage := request.PostFormValue("package")
-			directoryString := strings.Replace(folderDirectory, homeDirectory, "", 1)
-			finalDirectory := homeDirectory + string(directoryString)
+		// 	homeDirectory, _ := os.UserHomeDir()
+		// 	folderDirectory := request.PostFormValue("folder")
+		// 	jsonPackage := request.PostFormValue("package")
+		// 	directoryString := strings.Replace(folderDirectory, homeDirectory, "", 1)
+		// 	finalDirectory := homeDirectory + string(directoryString)
 
-			projectDirectory := finalDirectory + "\\default.project.json"
+		// 	projectDirectory := finalDirectory + "\\default.project.json"
 
-			log.Printf(homeDirectory)
-			log.Printf(folderDirectory)
-			log.Printf(projectDirectory)
+		// 	log.Printf(homeDirectory)
+		// 	log.Printf(folderDirectory)
+		// 	log.Printf(projectDirectory)
 
-			_, err := os.Stat(projectDirectory)
+		// 	_, err := os.Stat(projectDirectory)
 
-			if os.IsNotExist(err) {
-				//file, err := os.Create(projectDirectory)
+		// 	if os.IsNotExist(err) {
+		// 		//file, err := os.Create(projectDirectory)
 
-				//if err != nil {
-				//	fmt.Println(err)
-				//	return
-				//}
+		// 		//if err != nil {
+		// 		//	fmt.Println(err)
+		// 		//	return
+		// 		//}
 
-				//defer file.Close()
+		// 		//defer file.Close()
 
-				//fmt.Fprintf(file, jsonPackage)
+		// 		//fmt.Fprintf(file, jsonPackage)
 
-				var v interface{}
+		// 		var v interface{}
 
-				if err := json.Unmarshal([]byte(jsonPackage), &v); err != nil {
-					log.Fatal(err)
-				}
+		// 		if err := json.Unmarshal([]byte(jsonPackage), &v); err != nil {
+		// 			log.Fatal(err)
+		// 		}
 
-				//os.Mkdir(finalDirectory+"/src", os.ModePerm)
+		// 		//os.Mkdir(finalDirectory+"/src", os.ModePerm)
 
-				// Note, re-enable project saving soon
+		// 		// Note, re-enable project saving soon
 
-				/*
-					tree map[
-						$className:DataModel
-						ReplicatedFirst:map[$path:src/ReplicatedFirst]
-						ReplicatedStorage:map[$path:src/ReplicatedStorage]
-						ServerScriptService:map[$path:src/ServerScriptService]
-						ServerStorage:map[$path:src/ServerStorage]
-					]
-				*/
+		// 		/*
+		// 			tree map[
+		// 				$className:DataModel
+		// 				ReplicatedFirst:map[$path:src/ReplicatedFirst]
+		// 				ReplicatedStorage:map[$path:src/ReplicatedStorage]
+		// 				ServerScriptService:map[$path:src/ServerScriptService]
+		// 				ServerStorage:map[$path:src/ServerStorage]
+		// 			]
+		// 		*/
 
-				process(v)
-			} else if err != nil {
-				log.Printf("Something went wrong when initializing package\n")
-				log.Printf("error: %s", err)
-			} else {
-				log.Printf("File already exists!\n")
-			}
-		})
+		// 		process(v)
+		// 	} else if err != nil {
+		// 		log.Printf("Something went wrong when initializing package\n")
+		// 		log.Printf("error: %s", err)
+		// 	} else {
+		// 		log.Printf("File already exists!\n")
+		// 	}
+		// })
 
 		http.ListenAndServe("localhost:8080", nil)
 	}
