@@ -182,6 +182,11 @@ func main() {
 			uuid := request.PostFormValue("uuid")
 			editorPath := request.PostFormValue("editor")
 
+			if editorPath == "" {
+				fmt.Fprintf(response, "PEACEEXTCRITICAL: No editor path has been provided.")
+				return
+			}
+
 			if scr, ok := ctx.Scripts[uuid]; ok {
 				log.Printf("Reopening UUID %s at FS path %s\n", uuid, scr.FsPath)
 				fmt.Fprintf(response, "success: reopen")

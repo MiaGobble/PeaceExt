@@ -1,5 +1,5 @@
 @echo off
-go build -o PeaceExt-win.exe
+go build -ldflags -H=windowsgui -o PeaceExt.exe
 echo Windows build complete.
 @REM set GOOS=darwin
 @REM set GOARCH=amd64
