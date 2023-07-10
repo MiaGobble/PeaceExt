@@ -11,7 +11,7 @@ For simplicity, I put together a very quick and very simple video demonstrating 
 https://www.youtube.com/watch?v=Fzl8BAvPMNo
 
 # What's to come
-This is an ***early access tech concept*** for the actual thing PeaceExt wants to be: a Rojo alternative. In the future, it will automatically generate project folders with `default_project.json` files that are cross-compatible with Rojo and Wally. These features aren't here yet but expect them sometime in the future. Stay tuned and follow this post for more details in the future.
+This is an ***early access tech concept*** for the actual thing PeaceExt wants to be: a Rojo alternative. In the future, it will automatically generate project folders with `default_project.json` files that are cross-compatible with Rojo and Wally. These features aren't here yet but expect them sometime in the future.
 
 I will also be gathering feedback during this stage of development to make sure I stay on the correct course of development. All constructive ideas are taken into account! Please report issues as well.
 
