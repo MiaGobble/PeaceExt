@@ -15,10 +15,8 @@ This is an ***early access tech concept*** for the actual thing PeaceExt wants t
 
 I will also be gathering feedback during this stage of development to make sure I stay on the correct course of development. All constructive ideas are taken into account! Please report issues as well.
 
-For now the GitHub repository for this won't be shared until I get it into a state that makes it appropriate to do so.
-
 # Download
-TODO
+https://github.com/MiaGobble/PeaceExt/releases
 
 # You rock!
 Keep the swag going! Are you working on a game with PeaceExt? Drop a link in the replies below and show others what they can achieve with this.
