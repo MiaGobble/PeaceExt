@@ -20,7 +20,10 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.19
-
+    
+    - name: Install fsnotify package
+      run: go get github.com/fsnotify/fsnotify
+      
     - name: Build
       run: go build -v ./...
 
